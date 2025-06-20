@@ -17,15 +17,13 @@ const Dashboard = () => {
           "https://clinic-hkjx.vercel.app/api/v1/appointment/getall",
           { withCredentials: true }
         );
+        console.log("Fetched data:", data); // Debug line to check response shape
 
-        if (
-          data &&
-          typeof data === "object" &&
-          Array.isArray(data.appointments)
-        ) {
-          setAppointments(data.appointments);
+        const appointments = data?.appointments;
+        if (Array.isArray(appointments)) {
+          setAppointments(appointments);
         } else {
-          throw new Error("Invalid format for appointment data");
+          throw new Error("Invalid format: appointments not found or not an array");
         }
       } catch (error) {
         console.error("Appointment Fetch Error:", error);
@@ -37,6 +35,7 @@ const Dashboard = () => {
         );
       }
     };
+
     fetchAppointments();
   }, []);
 
@@ -123,9 +122,7 @@ const Dashboard = () => {
                   </td>
                   <td>
                     {appointment.appointment_date
-                      ? new Date(
-                          appointment.appointment_date
-                        ).toLocaleString()
+                      ? new Date(appointment.appointment_date).toLocaleString()
                       : "N/A"}
                   </td>
                   <td>{appointment.phone || "N/A"}</td>
