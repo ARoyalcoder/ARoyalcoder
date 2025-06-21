@@ -15,7 +15,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/api/v1/user/login",
+        "aroyalcoder-production-bc69.up.railway.app/api/v1/user/login",
         { email, password, role: "Admin" },
         {
           withCredentials: true,

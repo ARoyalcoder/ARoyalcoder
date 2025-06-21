@@ -37,7 +37,7 @@ const AddNewAdmin = () => {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/api/v1/user/admin/addnew",
+        "aroyalcoder-production-bc69.up.railway.app/api/v1/user/admin/addnew",
         form,
         {
           withCredentials: true,

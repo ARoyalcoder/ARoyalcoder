@@ -16,21 +16,44 @@ config({ path: "./config.env" });
 
 const app = express();
 
-// ✅ Basic CORS setup
-app.use(cors({ origin: true, credentials: true }));
+// ✅ CORS Setup for local frontend access (adjust ports as needed)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
 
-// ✅ Built-in Middleware
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ✅ Common Middleware
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(fileUpload({ useTempFiles: true, tempFileDir: "/tmp/" }));
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
 
-// ✅ API Routes
+// ✅ API Routes Only
 app.use("/api/v1/message", messageRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/appointment", appointmentRouter);
 
-// ✅ Fallback for unknown API routes
+// ✅ Unknown API Route Handler
 app.all("/api/*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -38,7 +61,7 @@ app.all("/api/*", (req, res) => {
   });
 });
 
-// ✅ Global Error Handler
+// ✅ Error Middleware
 app.use(errorMiddleware);
 
 // ✅ Connect to DB
