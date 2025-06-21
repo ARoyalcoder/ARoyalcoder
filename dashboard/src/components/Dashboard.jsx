@@ -21,8 +21,7 @@ const Dashboard = () => {
         );
 
         if (Array.isArray(data?.appointments)) {
-          const sorted = sortAppointments(data.appointments);
-          setAppointments(sorted);
+          setAppointments(data.appointments);
         } else {
           throw new Error("Invalid appointments data");
         }
@@ -40,27 +39,6 @@ const Dashboard = () => {
     fetchAppointments();
   }, [isAuthenticated]);
 
-  const sortAppointments = (arr) => {
-    return [...arr].sort((a, b) => {
-      // Priority: Pending first, then Accepted/Rejected
-      const statusOrder = {
-        Pending: 0,
-        Accepted: 1,
-        Rejected: 2,
-      };
-
-      const statusDiff =
-        (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
-
-      if (statusDiff !== 0) return statusDiff;
-
-      // For Pending, sort by most recent (newest first)
-      const dateA = new Date(a.createdAt || a.appointment_date || 0).getTime();
-      const dateB = new Date(b.createdAt || b.appointment_date || 0).getTime();
-      return dateB - dateA;
-    });
-  };
-
   const handleUpdateStatus = async (id, status) => {
     try {
       const { data } = await axios.put(
@@ -69,17 +47,12 @@ const Dashboard = () => {
         { withCredentials: true }
       );
 
-      const updatedAppointments = appointments.map((a) =>
-        a._id === id ? { ...a, status } : a
+      setAppointments((prev) =>
+        prev.map((a) => (a._id === id ? { ...a, status } : a))
       );
-
-      // Re-sort after updating status
-      setAppointments(sortAppointments(updatedAppointments));
       toast.success(data.message || "Status updated");
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Status update failed"
-      );
+      toast.error(error.response?.data?.message || "Status update failed");
     }
   };
 
@@ -110,8 +83,7 @@ const Dashboard = () => {
               <h5>{fullName}</h5>
             </div>
             <p>
-              Welcome to your dashboard. You can manage appointments and
-              monitor your clinic's performance.
+              Welcome to your dashboard. You can manage appointments and monitor your clinic's performance.
             </p>
           </div>
         </div>
@@ -142,8 +114,12 @@ const Dashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {appointments.length > 0 ? (
-              appointments.map((a) => (
+            {[...appointments]
+              .sort((a, b) => {
+                const priority = { Pending: 0, Accepted: 1, Rejected: 2 };
+                return (priority[a.status] ?? 3) - (priority[b.status] ?? 3);
+              })
+              .map((a) => (
                 <tr key={a._id}>
                   <td>{`${a.firstName || ""} ${a.lastName || ""}`}</td>
                   <td>
@@ -172,8 +148,8 @@ const Dashboard = () => {
                     )}
                   </td>
                 </tr>
-              ))
-            ) : (
+              ))}
+            {appointments.length === 0 && (
               <tr>
                 <td colSpan="6" style={{ textAlign: "center" }}>
                   No Appointments Found

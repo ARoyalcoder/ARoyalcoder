@@ -188,7 +188,7 @@ export const addNewDoctor = async (req, res, next) => {
 
 
 export const getAllDoctors = catchAsyncErrors(async (req, res, next) => {
-  const doctors = await User.find({role: "Doctor"});
+  const doctors = await User.find({ role: "Doctor" });
   res.status(200).json({
     success: true,
     doctors,
@@ -223,6 +223,8 @@ export const logoutPatient = catchAsyncErrors(async (req, res, next) => {
     .status(201)
     .cookie("patientToken", "", {
       httpOnly: true,
+      sameSite: "None",
+      secure: true,
       expires: new Date(Date.now()),
     })
     .json({

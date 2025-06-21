@@ -8,7 +8,8 @@ export const generateToken = (user, message, statusCode, res) => {
   const cookieOptions = {
     expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days
     httpOnly: true, // Prevents client-side JS from accessing the cookie
-    sameSite: "strict", // CSRF protection
+    sameSite: "None", 
+    secure: true,
   };
 
   res
