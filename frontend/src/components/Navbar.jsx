@@ -13,62 +13,52 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       const { data } = await axios.get(
-        "https://clinic-hkjx.vercel.app/api/v1/user/patient/logout",
+        "http://localhost:5000/api/v1/user/patient/logout",
         { withCredentials: true }
       );
       toast.success(data.message);
       setIsAuthenticated(false);
+      setShowMenu(false);
     } catch (error) {
-      toast.error(error.response?.data?.message || "Logout failed");
+      toast.error(error?.response?.data?.message || "Logout failed");
     }
   };
 
-  const handleToggleMenu = () => {
-    setShowMenu((prev) => !prev);
+  const handleNavigateLogin = () => {
+    navigate("/login");
+    setShowMenu(false);
   };
 
-  const handleNavigateLogin = () => {
-    setShowMenu(false);
-    navigate("/login");
-    handleToggleMenu();
-  };
+  const toggleMenu = () => setShowMenu((prev) => !prev);
 
   return (
-    <>
-      <nav className="container"  >
-        <div className="logo">
-          <img src="/logo.png" alt="Logo" className="logo-img" />
+    <nav className="container">
+      <div className="logo">
+        <img src="/logo.png" alt="Logo" className="logo-img" />
+      </div>
+
+      <div className={`navLinks ${showMenu ? "showmenu" : ""}`}>
+        <div className="links">
+          <Link to="/" className="navbarLink" onClick={toggleMenu}>Home</Link>
+          <Link to="/appointment" className="navbarLink" onClick={toggleMenu}>Appointment</Link>
+          <Link to="/about" className="navbarLink" onClick={toggleMenu}>About Us</Link>
         </div>
 
-        <div className={showMenu ? "navLinks showmenu" : "navLinks"}>
-          <div className="links">
-            <Link to="/" className="navbarLink" onClick={handleToggleMenu}>
-              Home
-            </Link>
-            <Link to="/appointment" onClick={handleToggleMenu}>
-              Appointment
-            </Link>
-            <Link to="/about" onClick={handleToggleMenu}>
-              About Us
-            </Link>
-          </div>
+        {isAuthenticated ? (
+          <button className="logoutBtn btn" onClick={handleLogout}>
+            LOGOUT
+          </button>
+        ) : (
+          <button className="loginBtn btn" onClick={handleNavigateLogin}>
+            LOGIN
+          </button>
+        )}
+      </div>
 
-          {isAuthenticated ? (
-            <button className="logoutBtn btn" onClick={handleLogout}>
-              LOGOUT
-            </button>
-          ) : (
-            <button className="loginBtn btn" onClick={handleNavigateLogin}>
-              LOGIN
-            </button>
-          )}
-        </div>
-
-        <div className="hamburger" onClick={handleToggleMenu}>
-          <GiHamburgerMenu />
-        </div>
-      </nav>
-    </>
+      <div className="hamburger" onClick={toggleMenu}>
+        <GiHamburgerMenu />
+      </div>
+    </nav>
   );
 };
 

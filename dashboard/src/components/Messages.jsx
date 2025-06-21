@@ -7,55 +7,58 @@ import { Navigate } from "react-router-dom";
 const Messages = () => {
   const [messages, setMessages] = useState([]);
   const { isAuthenticated } = useContext(Context);
+
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         const { data } = await axios.get(
-          "https://clinic-hkjx.vercel.app/api/v1/message/getall",
+          "http://localhost:5000/api/v1/message/getall",
           { withCredentials: true }
         );
-        setMessages(data.messages);
+        setMessages(data?.messages || []);
       } catch (error) {
-        console.log(error.response.data.message);
+        const msg =
+          error?.response?.data?.message || "Failed to fetch messages";
+        console.error("Fetch Error:", msg);
+        toast.error(msg);
+        setMessages([]);
       }
     };
+
     fetchMessages();
   }, []);
 
-  if (!isAuthenticated) {
-    return <Navigate to={"/login"} />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" />;
 
   return (
     <section className="page messages">
-      <h1>MESSAGE</h1>
+      <h1>MESSAGES</h1>
+
       <div className="banner">
-        {messages && messages.length > 0 ? (
-          messages.map((element) => {
-            return (
-              <div className="card" key={element._id}>
-                <div className="details">
-                  <p>
-                    First Name: <span>{element.firstName}</span>
-                  </p>
-                  <p>
-                    Last Name: <span>{element.lastName}</span>
-                  </p>
-                  <p>
-                    Email: <span>{element.email}</span>
-                  </p>
-                  <p>
-                    Phone: <span>{element.phone}</span>
-                  </p>
-                  <p>
-                    Message: <span>{element.message}</span>
-                  </p>
-                </div>
+        {messages.length > 0 ? (
+          messages.map(({ _id, firstName, lastName, email, phone, message }) => (
+            <div className="card" key={_id}>
+              <div className="details">
+                <p>
+                  First Name: <span>{firstName}</span>
+                </p>
+                <p>
+                  Last Name: <span>{lastName}</span>
+                </p>
+                <p>
+                  Email: <span>{email}</span>
+                </p>
+                <p>
+                  Phone: <span>{phone}</span>
+                </p>
+                <p>
+                  Message: <span>{message}</span>
+                </p>
               </div>
-            );
-          })
+            </div>
+          ))
         ) : (
-          <h1>No Messages!</h1>
+          <h2>No Messages Found!</h2>
         )}
       </div>
     </section>

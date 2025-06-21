@@ -1,174 +1,120 @@
 import React, { useContext, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Context } from "../main";
 import axios from "axios";
+import { Context } from "../main";
+
+const departments = [
+  "Pediatrics", "Homeopathy", "Orthopedics", "Cardiology",
+  "Neurology", "Oncology", "Radiology", "Physical Therapy",
+  "Dermatology", "ENT"
+];
 
 const AddNewDoctor = () => {
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
+  const navigate = useNavigate();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [dob, setDob] = useState("");
-  const [gender, setGender] = useState("");
-  const [password, setPassword] = useState("");
-  const [doctorDepartment, setDoctorDepartment] = useState("");
-  const [docAvatar, setDocAvatar] = useState("");
-  const [docAvatarPreview, setDocAvatarPreview] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "", lastName: "", email: "", phone: "",
+    dob: "", gender: "", password: "", doctorDepartment: ""
+  });
 
-  const navigateTo = useNavigate();
+  const [docAvatar, setDocAvatar] = useState(null);
+  const [preview, setPreview] = useState("");
 
-  const departmentsArray = [
-    "Pediatrics",
-    "Homeopathy",
-    "Orthopedics",
-    "Cardiology",
-    "Neurology",
-    "Oncology",
-    "Radiology",
-    "Physical Therapy",
-    "Dermatology",
-    "ENT",
-  ];
+  // Redirect unauthenticated user
+  if (!isAuthenticated) return <Navigate to="/login" />;
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleAvatar = (e) => {
     const file = e.target.files[0];
+    if (!file) return;
+
     const reader = new FileReader();
-    reader.readAsDataURL(file);
     reader.onload = () => {
-      setDocAvatarPreview(reader.result);
+      setPreview(reader.result);
       setDocAvatar(file);
     };
+    reader.readAsDataURL(file);
   };
 
-  const handleAddNewDoctor = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      const formData = new FormData();
-      formData.append("firstName", firstName);
-      formData.append("lastName", lastName);
-      formData.append("email", email);
-      formData.append("phone", phone);
-      formData.append("password", password);
-      formData.append("dob", dob);
-      formData.append("gender", gender);
-      formData.append("doctorDepartment", doctorDepartment);
-      formData.append("docAvatar", docAvatar);
-      await axios
-        .post("https://clinic-hkjx.vercel.app/api/v1/user/doctor/addnew", formData, {
+      const data = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        data.append(key, value);
+      });
+      data.append("docAvatar", docAvatar);
+
+      const res = await axios.post(
+        "http://localhost:5000/api/v1/user/doctor/addnew",
+        data,
+        {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        })
-        .then((res) => {
-          toast.success(res.data.message);
-          setIsAuthenticated(true);
-          navigateTo("/");
-          setFirstName("");
-          setLastName("");
-          setEmail("");
-          setPhone("");
-          setDob("");
-          setGender("");
-          setPassword("");
-        });
-    } catch (error) {
-      toast.error(error.response?.data?.message);
+        }
+      );
+
+      toast.success(res.data.message);
+      setIsAuthenticated(true);
+      navigate("/");
+
+      // Reset form
+      setFormData({
+        firstName: "", lastName: "", email: "", phone: "",
+        dob: "", gender: "", password: "", doctorDepartment: ""
+      });
+      setDocAvatar(null);
+      setPreview("");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "something went wrong");
     }
   };
 
-  if (!isAuthenticated) {
-    return <Navigate to={"/login"} />;
-  }
   return (
     <section className="page">
       <section className="container add-doctor-form">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
-          <img
-            src="/logo.png"
-            alt="logo"
-            className="logo"
-            style={{ height: '200px', width: 'auto' }}
-          />
-          <h1
-            className="form-title"
-            style={{ margin: 0, fontSize: '30px', fontWeight: 'bold', textAlign: 'right' }}
-          >
+        <div className="header" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: '1rem' }}>
+          <img src="/logo.png" alt="logo" className="logo" style={{ height: '200px' }} />
+          <h1 className="form-title" style={{ fontSize: '30px', fontWeight: 'bold', textAlign: 'right' }}>
             REGISTER A NEW DOCTOR
           </h1>
         </div>
-        <form onSubmit={handleAddNewDoctor}>
+
+        <form onSubmit={handleSubmit}>
           <div className="first-wrapper">
             <div>
-              <img
-                src={
-                  docAvatarPreview ? `${docAvatarPreview}` : "/docHolder.jpg"
-                }
-                alt="Doctor Avatar"
-              />
-              <input type="file" onChange={handleAvatar} />
+              <img src={preview || "/docHolder.jpg"} alt="Doctor Avatar" />
+              <input type="file" accept="image/*" onChange={handleAvatar} />
             </div>
+
             <div>
-              <input
-                type="text"
-                placeholder="First Name"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Last Name"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-              />
-              <input
-                type="text"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Mobile Number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
-              <input
-                type={"date"}
-                placeholder="Date of Birth"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-              />
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-              >
+              <input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} />
+              <input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} />
+              <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} />
+              <input type="tel" name="phone" placeholder="Mobile Number" value={formData.phone} onChange={handleChange} />
+              <input type="date" name="dob" value={formData.dob} onChange={handleChange} />
+
+              <select name="gender" value={formData.gender} onChange={handleChange}>
                 <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
+                <option>Male</option>
+                <option>Female</option>
               </select>
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <select
-                value={doctorDepartment}
-                onChange={(e) => {
-                  setDoctorDepartment(e.target.value);
-                }}
-              >
+
+              <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} />
+
+              <select name="doctorDepartment" value={formData.doctorDepartment} onChange={handleChange}>
                 <option value="">Select Department</option>
-                {departmentsArray.map((depart, index) => {
-                  return (
-                    <option value={depart} key={index}>
-                      {depart}
-                    </option>
-                  );
-                })}
+                {departments.map((dept, i) => (
+                  <option key={i} value={dept}>{dept}</option>
+                ))}
               </select>
+
               <button type="submit">Register New Doctor</button>
             </div>
           </div>

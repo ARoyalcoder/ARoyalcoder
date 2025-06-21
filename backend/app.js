@@ -13,12 +13,11 @@ import appointmentRouter from "./router/appointmentRouter.js";
 
 const app = express();
 
+// ✅ FIX: Remove trailing slashes from URLs
 const allowedOrigins = [
-  "https://clinic-snowy-ten.vercel.app",
-  "https://clinic-ffzp.vercel.app"
+  "http://localhost:5173",
+  "http://localhost:5174"
 ];
-
-console.log("Allowed Origins:", allowedOrigins); // Debug
 
 app.use(
   cors({
@@ -31,16 +30,14 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-app.options("*", cors());
-
+// ✅ Middleware Setup
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(
   fileUpload({
     useTempFiles: true,
@@ -48,12 +45,20 @@ app.use(
   })
 );
 
+// ✅ Routers
 app.use("/api/v1/message", messageRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/appointment", appointmentRouter);
 
+// ✅ Health check / root route
+app.get("/", (req, res) => {
+  res.send("Server is running 🚀");
+});
+
+// ✅ DB Connection
 dbConnection();
 
+// ✅ Error Handler Middleware
 app.use(errorMiddleware);
 
 export default app;

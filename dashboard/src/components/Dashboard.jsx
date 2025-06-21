@@ -7,90 +7,118 @@ import { GoCheckCircleFill } from "react-icons/go";
 import { AiFillCloseCircle } from "react-icons/ai";
 
 const Dashboard = () => {
-  const [appointments, setAppointments] = useState([]);
   const { isAuthenticated, admin } = useContext(Context);
+  const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     const fetchAppointments = async () => {
       try {
         const { data } = await axios.get(
-          "https://clinic-hkjx.vercel.app/api/v1/appointment/getall",
+          "http://localhost:5000/api/v1/appointment/getall",
           { withCredentials: true }
         );
-        console.log("Fetched data:", data); // Debug line to check response shape
 
-        const appointments = data?.appointments;
-        if (Array.isArray(appointments)) {
-          setAppointments(appointments);
+        if (Array.isArray(data?.appointments)) {
+          const sorted = sortAppointments(data.appointments);
+          setAppointments(sorted);
         } else {
-          throw new Error("Invalid format: appointments not found or not an array");
+          throw new Error("Invalid appointments data");
         }
       } catch (error) {
-        console.error("Appointment Fetch Error:", error);
-        setAppointments([]);
+        console.error("Fetch Error:", error);
         toast.error(
           error.response?.data?.message ||
             error.message ||
-            "Failed to fetch appointments"
+            "Failed to load appointments"
         );
+        setAppointments([]);
       }
     };
 
     fetchAppointments();
-  }, []);
+  }, [isAuthenticated]);
 
-  const handleUpdateStatus = async (appointmentId, status) => {
+  const sortAppointments = (arr) => {
+    return [...arr].sort((a, b) => {
+      // Priority: Pending first, then Accepted/Rejected
+      const statusOrder = {
+        Pending: 0,
+        Accepted: 1,
+        Rejected: 2,
+      };
+
+      const statusDiff =
+        (statusOrder[a.status] ?? 3) - (statusOrder[b.status] ?? 3);
+
+      if (statusDiff !== 0) return statusDiff;
+
+      // For Pending, sort by most recent (newest first)
+      const dateA = new Date(a.createdAt || a.appointment_date || 0).getTime();
+      const dateB = new Date(b.createdAt || b.appointment_date || 0).getTime();
+      return dateB - dateA;
+    });
+  };
+
+  const handleUpdateStatus = async (id, status) => {
     try {
       const { data } = await axios.put(
-        `https://clinic-hkjx.vercel.app/api/v1/appointment/update/${appointmentId}`,
+        `http://localhost:5000/api/v1/appointment/update/${id}`,
         { status },
         { withCredentials: true }
       );
 
-      setAppointments((prev) =>
-        prev.map((appointment) =>
-          appointment._id === appointmentId
-            ? { ...appointment, status }
-            : appointment
-        )
+      const updatedAppointments = appointments.map((a) =>
+        a._id === id ? { ...a, status } : a
       );
-      toast.success(data.message || "Status updated successfully");
+
+      // Re-sort after updating status
+      setAppointments(sortAppointments(updatedAppointments));
+      toast.success(data.message || "Status updated");
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Error updating appointment status"
+        error.response?.data?.message || "Status update failed"
       );
     }
   };
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" />;
 
-  const fullName = admin
-    ? `${admin.firstName || "Doctor"} ${admin.lastName || ""}`.trim()
-    : "Doctor";
+  const fullName = `${admin?.firstName || "Doctor"} ${admin?.lastName || ""}`.trim();
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "Accepted":
+        return "value-accepted";
+      case "Rejected":
+        return "value-rejected";
+      default:
+        return "value-pending";
+    }
+  };
 
   return (
     <section className="dashboard page">
-      {/* Top Banner */}
+      {/* Banner Section */}
       <div className="banner">
         <div className="firstBox">
-          <img src="/doc.png" alt="Doctor Illustration" />
+          <img src="/doc.png" alt="Doctor" />
           <div className="content">
             <div>
               <p>Hello,</p>
               <h5>{fullName}</h5>
             </div>
             <p>
-              Welcome to your dashboard. Here you can manage appointments and
-              monitor your clinic's operations.
+              Welcome to your dashboard. You can manage appointments and
+              monitor your clinic's performance.
             </p>
           </div>
         </div>
 
         <div className="secondBox">
           <p>Total Appointments</p>
-          <h3>{appointments?.length || 0}</h3>
+          <h3>{appointments.length}</h3>
         </div>
 
         <div className="thirdBox">
@@ -99,7 +127,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Appointments Table */}
+      {/* Appointment Table */}
       <div className="banner">
         <h5>Appointments</h5>
         <table>
@@ -115,31 +143,21 @@ const Dashboard = () => {
           </thead>
           <tbody>
             {appointments.length > 0 ? (
-              appointments.map((appointment) => (
-                <tr key={appointment._id}>
+              appointments.map((a) => (
+                <tr key={a._id}>
+                  <td>{`${a.firstName || ""} ${a.lastName || ""}`}</td>
                   <td>
-                    {appointment.firstName || ""} {appointment.lastName || ""}
-                  </td>
-                  <td>
-                    {appointment.appointment_date
-                      ? new Date(appointment.appointment_date).toLocaleString()
+                    {a.appointment_date
+                      ? new Date(a.appointment_date).toLocaleString()
                       : "N/A"}
                   </td>
-                  <td>{appointment.phone || "N/A"}</td>
-                  <td>{appointment.symptoms || "N/A"}</td>
+                  <td>{a.phone || "N/A"}</td>
+                  <td>{a.symptoms || "N/A"}</td>
                   <td>
                     <select
-                      value={appointment.status || "Pending"}
-                      onChange={(e) =>
-                        handleUpdateStatus(appointment._id, e.target.value)
-                      }
-                      className={
-                        appointment.status === "Accepted"
-                          ? "value-accepted"
-                          : appointment.status === "Rejected"
-                          ? "value-rejected"
-                          : "value-pending"
-                      }
+                      value={a.status || "Pending"}
+                      onChange={(e) => handleUpdateStatus(a._id, e.target.value)}
+                      className={getStatusClass(a.status)}
                     >
                       <option value="Pending">Pending</option>
                       <option value="Accepted">Accepted</option>
@@ -147,7 +165,7 @@ const Dashboard = () => {
                     </select>
                   </td>
                   <td>
-                    {appointment.status === "Accepted" ? (
+                    {a.status === "Accepted" ? (
                       <GoCheckCircleFill className="green" />
                     ) : (
                       <AiFillCloseCircle className="red" />
@@ -158,7 +176,7 @@ const Dashboard = () => {
             ) : (
               <tr>
                 <td colSpan="6" style={{ textAlign: "center" }}>
-                  No Appointments Found!
+                  No Appointments Found
                 </td>
               </tr>
             )}

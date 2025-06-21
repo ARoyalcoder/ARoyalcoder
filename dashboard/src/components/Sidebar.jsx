@@ -1,78 +1,62 @@
 import React, { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import axios from "axios";
+
+// ✅ Correct and valid icon imports
 import { TiHome } from "react-icons/ti";
 import { RiLogoutBoxFill } from "react-icons/ri";
 import { AiFillMessage } from "react-icons/ai";
 import { GiHamburgerMenu } from "react-icons/gi";
-import { FaUserDoctor } from "react-icons/fa6";
+import { FaUserMd } from "react-icons/fa"; // ✅ Doctor icon
 import { MdAddModerator } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
-import axios from "axios";
-import { toast } from "react-toastify";
+
 import { Context } from "../main";
-import { useNavigate } from "react-router-dom";
 
 const Sidebar = () => {
   const [show, setShow] = useState(false);
-
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await axios
-      .get("https://clinic-hkjx.vercel.app/api/v1/user/admin/logout", {
-        withCredentials: true,
-      })
-      .then((res) => {
-        toast.success(res.data.message);
-        setIsAuthenticated(false);
-      })
-      .catch((err) => {
-        toast.error(err.response.data.message);
-      });
+    try {
+      const { data } = await axios.get(
+        "http://localhost:5000/api/v1/user/admin/logout",
+        { withCredentials: true }
+      );
+      toast.success(data.message);
+      setIsAuthenticated(false);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Logout failed");
+    }
   };
 
-  const navigateTo = useNavigate();
+  const navigateAndClose = (path) => {
+    navigate(path);
+    setShow(false);
+  };
 
-  const gotoHomePage = () => {
-    navigateTo("/");
-    setShow(!show);
-  };
-  const gotoDoctorsPage = () => {
-    navigateTo("/doctors");
-    setShow(!show);
-  };
-  const gotoMessagesPage = () => {
-    navigateTo("/messages");
-    setShow(!show);
-  };
-  const gotoAddNewDoctor = () => {
-    navigateTo("/doctor/addnew");
-    setShow(!show);
-  };
-  const gotoAddNewAdmin = () => {
-    navigateTo("/admin/addnew");
-    setShow(!show);
-  };
+  if (!isAuthenticated) return null;
 
   return (
     <>
-      <nav
-        style={!isAuthenticated ? { display: "none" } : { display: "flex" }}
-        className={show ? "show sidebar" : "sidebar"}
-      >
+      <nav className={`sidebar ${show ? "show" : ""}`}>
         <div className="links">
-          <TiHome onClick={gotoHomePage} />
-          <FaUserDoctor onClick={gotoDoctorsPage} />
-          <MdAddModerator onClick={gotoAddNewAdmin} />
-          <IoPersonAddSharp onClick={gotoAddNewDoctor} />
-          <AiFillMessage onClick={gotoMessagesPage} />
-          <RiLogoutBoxFill onClick={handleLogout} />
+          <TiHome title="Home" onClick={() => navigateAndClose("/")} />
+          <FaUserMd title="Doctors" onClick={() => navigateAndClose("/doctors")} />
+          <MdAddModerator title="Add Admin" onClick={() => navigateAndClose("/admin/addnew")} />
+          <IoPersonAddSharp title="Add Doctor" onClick={() => navigateAndClose("/doctor/addnew")} />
+          <AiFillMessage title="Messages" onClick={() => navigateAndClose("/messages")} />
+          <RiLogoutBoxFill title="Logout" onClick={handleLogout} />
         </div>
       </nav>
-      <div
-        className="wrapper"
-        style={!isAuthenticated ? { display: "none" } : { display: "flex" }}
-      >
-        <GiHamburgerMenu className="hamburger" onClick={() => setShow(!show)} />
+
+      <div className="wrapper">
+        <GiHamburgerMenu
+          className="hamburger"
+          onClick={() => setShow((prev) => !prev)}
+        />
       </div>
     </>
   );
