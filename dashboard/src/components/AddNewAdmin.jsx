@@ -7,92 +7,62 @@ import axios from "axios";
 const AddNewAdmin = () => {
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    dob: "",
-    gender: "",
-    password: "",
-  });
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [dob, setDob] = useState("");
+  const [gender, setGender] = useState("");
+  const [password, setPassword] = useState("");
 
-  const navigate = useNavigate();
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const validateForm = () => {
-    const { firstName, lastName, email, phone, gender, password } = form;
-    return firstName && lastName && email && phone && gender && password;
-  };
+  const navigateTo = useNavigate();
 
   const handleAddNewAdmin = async (e) => {
     e.preventDefault();
-    if (!validateForm()) {
-      toast.error("Please fill all required fields.");
-      return;
-    }
-
     try {
-      const { data } = await axios.post(
-        "aroyalcoder-production-bc69.up.railway.app/api/v1/user/admin/addnew",
-        form,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      toast.success(data.message);
-      setIsAuthenticated(true);
-      navigate("/");
-
-      // Clear form
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        dob: "",
-        gender: "",
-        password: "",
-      });
+      await axios
+        .post(
+          "http://localhost:5000/api/v1/user/admin/addnew",
+          { firstName, lastName, email, phone, dob, gender, password },
+          {
+            withCredentials: true,
+            headers: { "Content-Type": "application/json" },
+          }
+        )
+        .then((res) => {
+          toast.success(res.data.message);
+          setIsAuthenticated(true);
+          navigateTo("/");
+          setFirstName("");
+          setLastName("");
+          setEmail("");
+          setPhone("");
+          setDob("");
+          setGender("");
+          setPassword("");
+        });
     } catch (error) {
-      const message =
-        error.response?.data?.message || "Failed to register admin";
-      toast.error(message);
+      toast.error(error.response.data.message);
     }
   };
 
-  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    return <Navigate to={"/login"} />;
+  }
 
   return (
     <section className="page">
       <section className="container form-component add-admin-form">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            marginBottom: "1rem",
-          }}
-        >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <img
             src="/logo.png"
             alt="logo"
             className="logo"
-            style={{ height: "200px", width: "auto" }}
+            style={{ height: '200px', width: 'auto' }}
           />
           <h1
             className="form-title"
-            style={{
-              margin: 0,
-              fontSize: "30px",
-              fontWeight: "bold",
-              textAlign: "right",
-            }}
+            style={{ margin: 0, fontSize: '30px', fontWeight: 'bold', textAlign: 'right' }}
           >
             REGISTER A NEW ADMIN
           </h1>
@@ -102,66 +72,42 @@ const AddNewAdmin = () => {
           <div>
             <input
               type="text"
-              name="firstName"
               placeholder="First Name"
-              value={form.firstName}
-              onChange={handleChange}
-              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
             />
             <input
               type="text"
-              name="lastName"
               placeholder="Last Name"
-              value={form.lastName}
-              onChange={handleChange}
-              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
             />
           </div>
           <div>
             <input
-              type="email"
-              name="email"
+              type="text"
               placeholder="Email"
-              value={form.email}
-              onChange={handleChange}
-              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
             <input
-              type="tel"
-              name="phone"
+              type="number"
               placeholder="Mobile Number"
-              value={form.phone}
-              onChange={handleChange}
-              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
           </div>
           <div>
-            <select
-              name="gender"
-              value={form.gender}
-              onChange={handleChange}
-              required
-            >
+            <select value={gender} onChange={(e) => setGender(e.target.value)}>
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
             <input
               type="password"
-              name="password"
               placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          <div>
-            <input
-              type="date"
-              name="dob"
-              placeholder="Date of Birth"
-              value={form.dob}
-              onChange={handleChange}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <div style={{ justifyContent: "center", alignItems: "center" }}>

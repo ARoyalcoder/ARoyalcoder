@@ -14,44 +14,44 @@ import appointmentRouter from "./router/appointmentRouter.js";
 // Load environment variables
 config({ path: "./config.env" });
 
+// Initialize app
 const app = express();
 
-// ✅ CORS Setup for local frontend access (adjust ports as needed)
+// ✅ Connect to DB
+dbConnection();
+
+// ✅ CORS Setup
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
 ];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS Error: Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 
-// ✅ Common Middleware
+// ✅ Middleware
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: "/tmp/",
-  })
-);
+app.use(fileUpload({ useTempFiles: true, tempFileDir: "/tmp/" }));
 
-// ✅ API Routes Only
+// ✅ Routes
 app.use("/api/v1/message", messageRouter);
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/appointment", appointmentRouter);
+
+// ✅ Basic API Status Route
+app.get("/", (req, res) => {
+  res.send("Clinic Management API is running.");
+});
 
 // ✅ Unknown API Route Handler
 app.all("/api/*", (req, res) => {
@@ -61,10 +61,7 @@ app.all("/api/*", (req, res) => {
   });
 });
 
-// ✅ Error Middleware
+// ✅ Global Error Middleware
 app.use(errorMiddleware);
-
-// ✅ Connect to DB
-dbConnection();
 
 export default app;
