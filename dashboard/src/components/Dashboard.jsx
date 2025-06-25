@@ -16,7 +16,7 @@ const Dashboard = () => {
     const fetchAppointments = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:5000/api/v1/appointment/getall",
+          "https://aroyalcoder.onrender.com/api/v1/appointment/getall",
           { withCredentials: true }
         );
 

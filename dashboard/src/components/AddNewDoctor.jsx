@@ -52,7 +52,7 @@ const AddNewDoctor = () => {
       data.append("docAvatar", docAvatar);
 
       const res = await axios.post(
-        "http://localhost:5000/api/v1/user/doctor/addnew",
+        "https://aroyalcoder.onrender.com/api/v1/user/doctor/addnew",
         data,
         {
           withCredentials: true,

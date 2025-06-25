@@ -22,7 +22,7 @@ const Sidebar = () => {
   const handleLogout = async () => {
     try {
       const { data } = await axios.get(
-        "http://localhost:5000/api/v1/user/admin/logout",
+        "https://aroyalcoder.onrender.com/api/v1/user/admin/logout",
         { withCredentials: true }
       );
       toast.success(data.message);

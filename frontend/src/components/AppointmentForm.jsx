@@ -30,7 +30,7 @@ const AppointmentForm = () => {
 
     try {
       const { data } = await axios.post(
-        "http://localhost:5000/api/v1/appointment/post",
+        "https://aroyalcoder.onrender.com/api/v1/appointment/post",
         {
           firstName,
           lastName,
